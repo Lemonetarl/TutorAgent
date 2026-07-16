@@ -50,6 +50,8 @@ _SAFE_EXPR = re.compile(r"^[0-9a-zA-Z_+\-*/^(). ,]*$")
 
 
 def _sanitize(s: str) -> Optional[str]:
+    if not isinstance(s, str):
+        return None
     s = s.strip()
     if not s or "__" in s or not _SAFE_EXPR.match(s):
         return None
@@ -156,6 +158,12 @@ def expressions_equivalent(a_str: str, b_str: str) -> ComparisonResult:
     except (sympy.SympifyError, SyntaxError, TypeError) as e:
         return ComparisonResult("UNSUPPORTED", "parse_error",
                                 f"could not parse: {e}", ["parse_error"])
+    
+    if not (isinstance(a, sympy.Expr) and isinstance(b, sympy.Expr)):
+        return ComparisonResult("UNSUPPORTED", "parse_error",
+                                "sympify did not yield an expression "
+                                "(non-string input reaching the comparator?)",
+                                ["parse_error"])
 
     # Rung 1: structural. sympify canonicalizes commutative order, so
     # 'g*t*sqrt(2)' and 'sqrt(2)*g*t' are already identical objects.
@@ -187,11 +195,19 @@ def expressions_equivalent(a_str: str, b_str: str) -> ComparisonResult:
 # --------------------------------------------------------------------------
 
 def _to_float(expr_str: str) -> Optional[float]:
+    clean = _sanitize(expr_str)
+    if clean is None:
+        return None
     try:
-        v = sympify(expr_str)
+        v = sympify(clean)
+        if not isinstance(v, sympy.Expr):
+            return None
         if v.free_symbols:
-            return None                     # 'scalar' that isn't -- mistyped
-        return float(v.evalf())
+            return None
+        result = v.evalf()
+        if not isinstance(result, sympy.Float):   # <-- narrows the union to Float
+            return None                            #     and catches zoo/oo/nan
+        return float(result)
     except (sympy.SympifyError, SyntaxError, TypeError, ValueError):
         return None
 
@@ -204,7 +220,7 @@ def compare_scalar(student_val: str, student_units: Optional[str],
                    ref_val: str, ref_units: Optional[str],
                    rel_tol: float) -> ComparisonResult:
     issues: list[str] = []
-
+    
     if rel_tol == 0.0:
         # Exact domain (math): '1/3' vs '0.3333' must NOT pass. Delegate to
         # the symbolic ladder, which compares exactly.
@@ -297,6 +313,15 @@ def compare(student_values: list[str], student_units: Optional[str],
         return ComparisonResult("UNSUPPORTED", "empty_input",
                                 "no value to compare", ["values_missing"])
 
+    rel_tol = DOMAIN_REL_TOL.get(domain, 0.01)
+
+    for v in (*student_values, *ref_values):
+        if not isinstance(v, str):
+            raise TypeError(
+                f"compare() takes list[str], got {type(v).__name__}. "
+                f"Pass [v.sympy_form for v in answer.values], not the AnswerValue "
+                f"objects themselves -- or call adapter.grade(), which does it for you.")
+ 
     rel_tol = DOMAIN_REL_TOL.get(domain, 0.01)
 
     if answer_type == "scalar":

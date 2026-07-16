@@ -8,13 +8,14 @@ The demo problem: a ball dropped from rest, h = 20 m, g = 9.8 m/s^2.
 """
 import asyncio
 import json
+from xmlrpc import client
 
 import pytest
 
 from scripts.models import AnswerValue, ProblemOnly, StudentAnswer
 from scripts.solver_pipeline import (Adjudication, FakeMessage, FakeUsage, MockClient,
-                             REVIEW_QUEUE_PATH, ToolUseBlock, execute_tool,
-                             run_pipeline)
+                             PipelineResult, REVIEW_QUEUE_PATH, ToolUseBlock,
+                             execute_tool, run_pipeline)
 
 PROBLEM = ProblemOnly(
     subject_domain="physics",
@@ -73,7 +74,6 @@ def adjudicator_msg(contradiction: str) -> FakeMessage:
 
 def run(client) -> "PipelineResult":
     return asyncio.run(run_pipeline(client, PROBLEM, quarantine=QUARANTINE, k=3))
-
 
 # --------------------------------- scenarios -------------------------------
 

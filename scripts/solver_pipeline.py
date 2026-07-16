@@ -49,8 +49,8 @@ from typing import Any, Literal, Optional, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from comparator import compare, expressions_equivalent
-from models import AnswerType, AnswerValue, ProblemOnly, ReferenceAnswer, StudentAnswer
+from scripts.comparator import compare, expressions_equivalent
+from scripts.models import AnswerType, AnswerValue, ProblemOnly, ReferenceAnswer, StudentAnswer
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -387,11 +387,26 @@ class AnthropicClient:
     """Thin wrapper over the real SDK with backoff. Constructed lazily so the
     module imports (and the mock tests run) without the SDK installed."""
 
+    # Sonnet 5, the Opus 4.x line, and Fable/Mythos 5 sample adaptively and
+    # return a 400 if temperature/top_p/top_k are set to ANY value (including 0).
+    # Haiku 4.5 still accepts them. Rather than make every caller know this, the
+    # wrapper strips sampling params for the models that reject them.
+    _NO_SAMPLING_PREFIXES = ("claude-sonnet-5", "claude-opus-4", "claude-fable", "claude-mythos")
+
     def __init__(self) -> None:
         from anthropic import AsyncAnthropic  # requires ANTHROPIC_API_KEY
         self._client = AsyncAnthropic()
 
+    @classmethod
+    def _clean(cls, kwargs: dict) -> dict:
+        model = kwargs.get("model", "")
+        if any(model.startswith(p) for p in cls._NO_SAMPLING_PREFIXES):
+            for p in ("temperature", "top_p", "top_k"):
+                kwargs.pop(p, None)
+        return kwargs
+
     async def create(self, **kwargs):
+        kwargs = self._clean(kwargs)
         return await _with_backoff(lambda: self._client.messages.create(**kwargs))
 
 
