@@ -28,10 +28,12 @@ I3. UNCERTAIN is a first-class output.
          full trace is appended to the human review queue. Nothing downstream
          may issue a verdict from a blocked result.
 
-CONVERGENCE STATUS SEMANTICS
-    HIGH      unanimous k solver samples AND verifier agreement, first round
-    MEDIUM    majority (non-unanimous) agreement, or convergence on round >=2
+CONVERGENCE STATUS SEMANTICS (at the default k=1; see K_SAMPLES note)
+    HIGH      independent verifier agreement on the first round
+    MEDIUM    agreement reached only after an evidence retry (round >= 2)
     UNCERTAIN no solver<->verifier agreement within MAX_ROUNDS
+    (At k>1 the original semantics apply: HIGH additionally requires a
+    unanimous solver vote; MEDIUM covers split-vote agreement.)
 """
 from __future__ import annotations
 
@@ -56,8 +58,17 @@ from scripts.models import AnswerType, AnswerValue, ProblemOnly, ReferenceAnswer
 # Configuration
 # ---------------------------------------------------------------------------
 MODEL = "claude-sonnet-5"          # solver / verifier / adjudicator routing
-K_SAMPLES = 3                      # self-consistency width (3..5)
-SOLVER_TEMPERATURE = 0.8           # variation for self-consistency
+K_SAMPLES = 1
+# Was 3 (self-consistency sampling at temperature 0.8). Sonnet 5 deprecated
+# temperature: samples became near-identical, so a k=3 vote was 3x the cost
+# for zero added signal (first real run: 3/3 unanimous by construction).
+# Redundancy now lives where it always mattered most -- the blind verifier
+# (S3) solving independently by a different method, plus the adjudicator.
+# k stays a parameter: method-diversified sampling could restore real
+# variation later without touching this file's logic.
+SOLVER_TEMPERATURE = 0.8           # vestigial: stripped by AnthropicClient._clean
+                                   # for Sonnet 5; kept so MockClient tests and
+                                   # any temperature-accepting model still work
 DETERMINISTIC_TEMPERATURE = 0.0    # adjudicator
 MAX_ROUNDS = 3                     # initial solve + up to 2 evidence retries
 MAX_TOOL_ITERATIONS = 8            # verifier tool-loop ceiling
@@ -479,7 +490,11 @@ async def call_structured(client, *, system: str, user_content: str,
                           temperature: float, trace: RunTrace, stage: str):
     t0 = time.perf_counter()
     msg = await client.create(
-        model=MODEL, max_tokens=3000, temperature=temperature, system=system,
+        # 8000, not 3000: with temperature gone, Sonnet 5 runs adaptive
+        # thinking, and thinking tokens count against max_tokens. A hard ODE
+        # at 3000 can spend its whole budget reasoning and truncate the
+        # tool call mid-JSON -- surfacing as a baffling ValidationError.
+        model=MODEL, max_tokens=8000, temperature=temperature, system=system,
         messages=[{"role": "user", "content": user_content}],
         tools=[_schema_tool(schema_model, tool_name,
                             f"Emit the final {schema_model.__name__} object.")],
@@ -501,7 +516,7 @@ async def run_tool_loop(client, *, system: str, user_content: str,
         "Submit your final structured solution. Call exactly once, when done.")]
     for _ in range(MAX_TOOL_ITERATIONS):
         t0 = time.perf_counter()
-        msg = await client.create(model=MODEL, max_tokens=3000,
+        msg = await client.create(model=MODEL, max_tokens=8000,
                                   temperature=temperature, system=system,
                                   messages=messages, tools=tools)
         trace.tick(stage, msg.usage, time.perf_counter() - t0)
@@ -688,6 +703,13 @@ async def run_pipeline(client, problem: ProblemOnly, *,
                     {"round": rnd, "solver_votes": votes, "k": k,
                      "matched": matched})
         if matched:
+            # GATE SEMANTICS AT k=1: votes == k is trivially true (1/1), so
+            # HIGH no longer encodes "unanimous solver AND verifier agree" --
+            # it now encodes "independent verifier agreement on the FIRST
+            # round". MEDIUM = agreement only after an evidence retry. Still
+            # coherent, but one of the gate's two evidence sources went
+            # trivially true; tightening HIGH to also require verifier tool
+            # usage is noted future work.
             trace.status = "HIGH" if (votes == k and rnd == 1) else "MEDIUM"
             return PipelineResult(
                 status=trace.status, blocked=False,

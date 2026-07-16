@@ -1,0 +1,621 @@
+[
+    {
+        "id": "First_Order_ODE_1",
+        "domain": "math",
+        "problem_statement": "Solve the first-order ordinary differential equation dy/dx = -3y, y(0) = 1.",
+        "correct_answer": {
+            "value": "exp(-3*x).",
+            "units": null
+        },
+        "injected_errors": [
+            {
+                "wrong_text": "exp(3*x)",
+                "sympy_form": "exp(3*x)",
+                "units": null,
+                "cause": "Dropping sign during calculation"
+            },
+            {
+                "wrong_text": "C*exp(3*x)",
+                "sympy_form": "C*exp(3*x)",
+                "units": null,
+                "cause": "Forgot to apply for the initial condition and left the integration constant as a arbitary constant"
+            }
+        ]
+    },
+
+    {
+        "id": "First_Order_ODE_2",
+        "domain": "math",    
+        "problem_statement": "Solve the first-order ordinary differential equation y' = 2y, y(0) = 3.",
+        "correct_answer": {
+            "value": "3*exp(2*x).",
+            "units": null
+        },
+        "injected_errors": [
+            {
+                "wrong_text": "exp(2*x)",
+                "sympy_form": "exp(2*x)",
+                "units": null,
+                "cause": "Forgot to apply for the initial condition incorrectly and used C=1 instread of C=3."
+            },
+            {
+                "wrong_text": "3*exp(x)",
+                "sympy_form": "3*exp(x)",
+                "units": null,
+                "cause": "Integrated 2 incorrectly, giving exp(x) instead of exp(2*x)"
+            }
+        ]
+    },
+
+    {
+        "id": "First_Order_ODE_3",
+        "domain": "math",
+        "problem_statement": "Solve the first-order ordinary differential equation dy/dx = y^2, y(0) = 1.",
+        "correct_answer": {
+            "value": "-1/(x - 1).",
+            "units": null
+        },
+        "injected_errors": [
+            {
+                "wrong_text": "1/(x+1)",
+                "sympy_form": "1/(x+1)",
+                "units": null,
+                "cause": "Forgot that ∫y^(-2)dy = -1/y, leading to the wrong sign."
+            },
+            {
+                "wrong_text": "-1/(x+1)",
+                "sympy_form": "-1/(x+1)",
+                "units": null,
+                "cause": "Solved for the integration constant incorrectly after applying y(0)=1."
+            }
+        ]
+    },
+
+    {
+        "id": "Second_Order_ODE_1",
+        "domain": "math",
+        "problem_statement": "Solve the second-order ordinary differential equation d^2y/dx^2 - 4 dy/dx + 4y = 0, y(0) = 1, y'(0) = 0.",
+        "correct_answer": {
+            "value": "(1 - 2*x)*exp(2*x).",
+            "units": null
+        },
+        "injected_errors": [
+            {
+                "wrong_text": "exp(2*x)",
+                "sympy_form": "exp(2*x)",
+                "units": null,
+                "cause": "Forgot that repeated roots require an additional x factor."
+            },
+            {
+                "wrong_text": "(1+2*x)*exp(2*x)",
+                "sympy_form": "(1+2*x)*exp(2*x)",
+                "units": null,
+                "cause": "Made a sign error while solving for the constants."
+            }
+        ]
+    },
+
+    {
+        "id": "Second_Order_ODE_2",
+        "domain": "math",
+        "problem_statement": "Solve the second-order ordinary differential equation d^2y/dx^2 + y = 0, y(0) = 0, y'(0) = 1.",
+        "correct_answer": {
+            "value": "sin(x).",
+            "units": null
+        },
+        "injected_errors": [
+            {
+                "wrong_text": "exp(x)",
+                "sympy_form": "exp(x)",
+                "units": null,
+                "cause": "Used exponential solutions instead of trigonometric solutions for complex roots."
+            },
+            {
+                "wrong_text": "cos(x)",
+                "sympy_form": "cos(x)",
+                "units": null,
+                "cause": "Applied the initial conditions incorrectly and swapped the coefficients."
+            }
+            ]
+    },
+
+    {
+        "id": "Second_Order_ODE_3",
+        "domain": "math",
+        "problem_statement": "Solve the second-order ordinary differential equation d^2y/dx^2 - 2 dy/dx + 5y = 0, y(0) = 1, y'(0) = 0.",
+        "correct_answer": {
+            "value": "exp(x)(cos(2*x) + (1/2)*sin(2*x)).",
+            "units": null
+        }
+    },
+    {
+        "id": "Calculus_Differentiation_1",
+        "domain": "math",
+        "problem_statement": "Given the function f(x) = x^3*exp(2*x) + sin(x), find the exact symbolic expression for the derivative f'(x).",
+        "correct_answer": {
+        "value": "exp(2*x)*(2*x**3 + 3*x**2) + cos(x)",
+        "units": null
+        },
+        "injected_errors": [
+        {
+            "wrong_text": "exp(x)*cos(2*x)",
+            "sympy_form": "exp(x)*cos(2*x)",
+            "units": null,
+            "cause": "Forgot the sine component after solving for the constants."
+        },
+        {
+            "wrong_text": "exp(x)*(cos(2*x)+2*sin(2*x))",
+            "sympy_form": "exp(x)*(cos(2*x)+2*sin(2*x))",
+            "units": null,
+            "cause": "Differentiated incorrectly when applying the initial conditions, giving an incorrect coefficient."
+        }
+        ]
+    },
+    {
+        "id": "Calculus_Integration_1",
+        "domain": "math",
+        "problem_statement": "Evaluate the definite integral of the function f(x) = x^2*exp(x) over the interval from x = 0 to x = 2. Find the exact symbolic result.",
+        "correct_answer":{
+        "value": "2*exp(2) - 2",
+        "units": null
+        },
+        "injected_errors": [
+        {
+            "wrong_text": "2*exp(2)",
+            "sympy_form": "2*exp(2)",
+            "units": null,
+            "cause": "Forgot to subtract the value of the antiderivative at the lower limit."
+        },
+        {
+            "wrong_text": "exp(2)*(4-2+2)-2",
+            "sympy_form": "4*exp(2)-2",
+            "units": null,
+            "cause": "Made an algebra error during integration by parts."
+        }
+        ]
+    },
+    {
+        "id": "Calculus_Optimization_1",
+        "domain": "math",
+        "problem_statement": "Find the maximum value of the function f(x) = -2*x**2 + 12*x + 5 over all real values of x. Provide the exact maximum value.",
+        "correct_answer": {
+        "value": "23",
+        "units": null
+        },
+        "injected_errors": [
+        {
+            "wrong_text": "3",
+            "sympy_form": "3",
+            "units": null,
+            "cause": "Reported the x-coordinate of the maximum instead of the maximum value."
+        },
+        {
+            "wrong_text": "21",
+            "sympy_form": "21",
+            "units": null,
+            "cause": "Made an arithmetic mistake when evaluating the function at x=3."
+        }
+        ]
+    },
+    {
+        "id": "Calculus_Multivariable_1",
+        "domain": "math",
+        "problem_statement": "Given the scalar function f(x,y) = x^2*y + sin(x*y), calculate the gradient vector ∇f(x,y).",
+        "correct_answer": {
+        "value": "[2*x*y + y*cos(x*y), x**2 + x*cos(x*y)]",
+        "units": null
+        },
+        "injected_errors": [
+        {
+            "wrong_text": "[2*x*y+cos(x*y), x**2+cos(x*y)]",
+            "sympy_form": "[2*x*y+cos(x*y), x**2+cos(x*y)]",
+            "units": null,
+            "cause": "Forgot the chain rule when differentiating sin(x*y)."
+        },
+        {
+            "wrong_text": "[2*x*y+y*cos(x*y), x**2+y*cos(x*y)]",
+            "sympy_form": "[2*x*y+y*cos(x*y), x**2+y*cos(x*y)]",
+            "units": null,
+            "cause": "Used the wrong variable while computing the partial derivative with respect to y."
+        }
+        ]
+
+    },
+    {
+        "id": "Kinematics_1st_1",
+        "domain": "physics",
+        "problem_statement": "A block of mass $m = 2.0$ kg falls from rest under a constant gravitational acceleration $g = 9.8$ m/s^2. It experiences a linear drag force $F_d = -bv$, where the drag coefficient is $b = 0.5$ N·s/m. Calculate the exact terminal velocity of the block.",
+        "correct_answer": {
+            "value": "39.2",
+            "units": "m/s"
+        },
+        "injected_errors": [
+            {
+                "wrong_text": "19.6",
+                "sympy_form": "19.6",
+                "units": "m/s",
+                "cause": "Forgot to divide by the drag coefficient and used v = mg."
+            },
+            {
+                "wrong_text": "9.8",
+                "sympy_form": "9.8",
+                "units": "m/s",
+                "cause": "Used terminal velocity as g instead of solving mg = bv."
+            }
+        ]
+    },
+
+    {
+        "id": "Kinematics_1st_2",
+        "domain": "physics",   
+        "problem_statement": "A boat of mass $m$ coasts linearly with an initial velocity $v_0$. The only force acting on the boat is a quadratic water drag $F_d = -cv^2$. Derive the symbolic expression for its velocity $v$ as a function of position $x$.",
+        "correct_answer": {
+            "value": "v_0 * exp(-c*x/m)",
+            "units": null
+        },
+        "injected_errors": [
+            {
+                "wrong_text": "v_0/(1 + c*x/m)",
+                "sympy_form": "v_0/(1+c*x/m)",
+                "units": null,
+                "cause": "Forgot to convert dv/dt into v(dv/dx), leading to the time-domain solution."
+            },
+            {
+                "wrong_text": "v_0*exp(c*x/m)",
+                "sympy_form": "v_0*exp(c*x/m)",
+                "units": null,
+                "cause": "Made a sign error while separating variables."
+            }
+        ]
+    },
+    
+    {
+        "id": "Kinematics_2nd_1",
+        "domain": "physics",
+        "problem_statement": "A block of mass $m$ is attached to an ideal linear spring with stiffness constant $k$ on a horizontal frictionless surface. The block is displaced to a positive position $x_0$ and released from rest. Derive the symbolic expression for its position $x(t)$.",
+        "correct_answer": {
+            "value": "x_0 * cos(sqrt(k/m)*t)",
+            "units": null
+        },
+        "injected_errors": [
+            {
+                "wrong_text": "x_0*sin(sqrt(k/m)*t)",
+                "sympy_form": "x_0*sin(sqrt(k/m)*t)",
+                "units": null,
+                "cause": "Applied the initial conditions incorrectly."
+            },
+            {
+                "wrong_text": "x_0*cos(k*t/m)",
+                "sympy_form": "x_0*cos(k*t/m)",
+                "units": null,
+                "cause": "Forgot the square root when computing the natural frequency."
+            }
+        ]
+    },
+
+    {
+        "id": "Kinematics_Basic_1",
+        "domain": "physics",
+        "problem_statement": "A rock is dropped from rest from a cliff of height 80 m. Ignore air resistance. Calculate the time it takes for the rock to reach the ground. Use g = 9.8 m/s^2.",
+        "correct_answer": {
+            "value": "4.04",
+            "units": "s"
+        },
+        "injected_errors": [
+            {
+                "wrong_text": "2.86",
+                "sympy_form": "2.86",
+                "units": "s",
+                "cause": "Forgot the factor of 1/2 in the displacement equation and used h=gt²."
+            },
+            {
+                "wrong_text": "8.08",
+                "sympy_form": "8.08",
+                "units": "s",
+                "cause": "Forgot to take the square root after solving for t²."
+            }
+        ]
+    },
+
+    {
+        "id": "Kinematics_Basic_2",
+        "domain": "physics",
+        "problem_statement": "A ball is thrown vertically upward with an initial speed of 20.0 m/s. Ignore air resistance. Determine the maximum height reached by the ball. Use g = 9.8 m/s^2.",
+        "correct_answer": {
+            "value": "20.41",
+            "units": "m"
+        },
+        "injected_errors": [
+            {
+                "wrong_text": "40.82",
+                "sympy_form": "40.82",
+                "units": "m",
+                "cause": "Forgot the factor of 2 and used h=u²/g."
+            },
+            {
+                "wrong_text": "10.20",
+                "sympy_form": "10.20",
+                "units": "m",
+                "cause": "Incorrectly divided by 4g instead of 2g."
+            }
+        ]
+    },
+
+    {
+        "id": "Kinematics_Basic_3",
+        "domain": "physics",
+        "problem_statement": "A ball is launched from ground level with an initial speed of 30.0 m/s at an angle of 45 degrees above the horizontal. Ignore air resistance. Determine the maximum height reached by the ball. Use g = 9.8 m/s^2.",
+        "correct_answer": {
+            "value": "22.96",
+            "units": "m"
+        },
+        "injected_errors": [
+            {
+                "wrong_text": "45.92",
+                "sympy_form": "45.92",
+                "units": "m",
+                "cause": "Used the total launch speed instead of the vertical component."
+            },
+            {
+                "wrong_text": "11.48",
+                "sympy_form": "11.48",
+                "units": "m",
+                "cause": "Forgot the factor of 2 in the kinematic equation."
+            }
+        ]
+    },
+
+    {
+        "id": "Kinematics_Basic_4",
+        "domain": "physics",
+        "problem_statement": "A block slides horizontally off the edge of a platform with an initial horizontal speed of 12.0 m/s. The platform is 18.0 m above the ground. Ignore air resistance and friction. Determine the horizontal distance from the edge of the platform to the point where the block lands. Use g = 9.8 m/s^2.",
+        "correct_answer": {
+            "value": "22.99",
+            "units": "m"
+        },
+        "injected_errors": [
+            {
+                "wrong_text": "46.95",
+                "sympy_form": "46.95",
+                "units": "m",
+                "cause": "Used t=√(h/g) instead of √(2h/g)."
+            },
+            {
+                "wrong_text": "18.0",
+                "sympy_form": "18.0",
+                "units": "m",
+                "cause": "Confused the platform height with the horizontal distance."
+            }
+        ]
+    },
+
+    {
+        "id": "Kinematics_Basic_5",
+        "domain": "physics",
+        "problem_statement": "A car of mass $m$ rounds a frictionless banked curve of radius $R$ tilted at an angle $\\theta$ with respect to the horizontal. Derive the symbolic expression for the ideal speed $v$ at which the car can negotiate the curve without sliding up or down the incline.",
+        "correct_answer": {
+            "value": "sqrt(g*R*tan(theta))",
+            "units": null
+        },
+        "injected_errors": [
+            {
+                "wrong_text": "sqrt(g*R*sin(theta))",
+                "sympy_form": "sqrt(g*R*sin(theta))",
+                "units": null,
+                "cause": "Used sin(theta) instead of tan(theta) when resolving the normal force."
+            },
+            {
+                "wrong_text": "sqrt(g*R/cos(theta))",
+                "sympy_form": "sqrt(g*R/cos(theta))",
+                "units": null,
+                "cause": "Resolved the force components incorrectly."
+            }
+        ]
+    },
+
+    {
+        "id": "Kinematics_Basic_6",
+        "domain": "physics",
+        "problem_statement": "A particle moves in a circular path of radius $R = 2.0$ m. Its tangential speed depends on time according to the function $v(t) = 3t^2$ m/s. Calculate the exact magnitude of its total acceleration at $t = 1.0$ s.",
+        "correct_answer": {
+            "value": "7.5",
+            "units": "m/s^2"
+        },
+        "injected_errors": [
+            {
+                "wrong_text": "10.5",
+                "sympy_form": "10.5",
+                "units": "m/s^2",
+                "cause": "Added the tangential and centripetal accelerations directly instead of using the Pythagorean theorem."
+            },
+            {
+                "wrong_text": "6.0",
+                "sympy_form": "6.0",
+                "units": "m/s^2",
+                "cause": "Ignored the centripetal acceleration."
+            }
+        ]
+    },
+
+    {
+        "id": "Kinematics_Basic_7",
+        "domain": "physics",
+        "problem_statement": "The one-dimensional acceleration of a particle is given by $a(t) = 4t - 2$ m/s^2. The particle starts from the origin $x(0) = 0$ with an initial velocity $v(0) = 3$ m/s. Derive the symbolic expression for its position $x(t)$.",
+        "correct_answer": {
+            "value": "(2/3)*t**3 - t**2 + 3*t",
+            "units": null
+        },
+        "injected_errors": [
+            {
+                "wrong_text": "(2/3)*t**3 - t**2",
+                "sympy_form": "(2/3)*t**3-t**2",
+                "units": null,
+                "cause": "Forgot to apply the initial velocity after integrating acceleration."
+            },
+            {
+                "wrong_text": "2*t**3 - t**2 + 3*t",
+                "sympy_form": "2*t**3-t**2+3*t",
+                "units": null,
+                "cause": "Integrated 2t² incorrectly."
+            }
+        ]
+    },
+
+    {
+        "id": "Kinematics_Basic_8",
+        "domain": "physics",
+        "problem_statement": "A boat points its bow directly across a river of width $D = 100.0$ m. The boat's speed relative to the water is $v_{bw} = 4.0$ m/s. The river flows with a uniform current $v_{ws} = 3.0$ m/s. Calculate the exact downstream distance the boat is carried by the current by the time it reaches the opposite bank.",
+        "correct_answer": {
+            "value": "75.0",
+            "units": "m"
+        },
+        "injected_errors": [
+            {
+                "wrong_text": "100.0",
+                "sympy_form": "100",
+                "units": "m",
+                "cause": "Used the river width as the downstream drift."
+            },
+            {
+                "wrong_text": "175.0",
+                "sympy_form": "175",
+                "units": "m",
+                "cause": "Added the boat speed and current speed before computing the crossing time."
+            }
+        ]
+    },
+
+    {
+        "id": "Kinematics_Basic_9",
+        "domain": "physics",
+        "problem_statement": "A particle's acceleration is a function of its position $x$, given by $a(x) = cx^2$, where $c$ is a positive constant. If the particle starts from rest at $x=0$, derive the symbolic expression for its velocity $v$ as a function of $x$. Assume motion occurs in the positive direction.",
+        "correct_answer": {
+            "value": "sqrt((2*c*x**3)/3)",
+            "units": null
+        },
+        "injected_errors": [
+            {
+                "wrong_text": "c*x**3/3",
+                "sympy_form": "c*x**3/3",
+                "units": null,
+                "cause": "Forgot that acceleration equals v(dv/dx) and integrated only the right-hand side."
+            },
+            {
+                "wrong_text": "sqrt(c*x**3/3)",
+                "sympy_form": "sqrt(c*x**3/3)",
+                "units": null,
+                "cause": "Forgot the factor of 2 when integrating v dv."
+            }
+        ]
+    },
+    {
+    "id": "Kinematics_Basic_10",
+    "domain": "physics",
+    "statement": "A ball is dropped from rest from a height of 45 m. Taking g = 9.8 m/s**2, how long does it take to reach the ground?",
+    "correct_answer": {
+      "text": "t = 3.03 s"
+    },
+    "injected_errors": [
+      {
+        "wrong_text": "t = 2.14 s",
+        "cause": "forgot the factor of 2: used sqrt(h/g) instead of sqrt(2h/g)"
+      },
+      {
+        "wrong_text": "t = 6.06 s",
+        "cause": "doubled the correct time (algebra slip isolating t)"
+      }
+    ]
+  },
+  {
+    "id": "Kinematics_Basic_11",
+    "domain": "physics",
+    "statement": "A car accelerates from rest at 3 m/s**2 for 5 s. Find its final speed.",
+    "correct_answer": {
+      "text": "v = 15 m/s"
+    },
+    "injected_errors": [
+      {
+        "wrong_text": "v = 7.5 m/s",
+        "cause": "halved the result: confused v = a*t with the average-speed relation"
+      },
+      {
+        "wrong_text": "v = 8 m/s",
+        "cause": "added a + t instead of multiplying"
+      }
+    ]
+  },
+  {
+    "id": "Kinematics_Basic_12",
+    "domain": "physics",
+    "statement": "A 2 kg mass moves at 3 m/s. What is its kinetic energy?",
+    "correct_answer": {
+      "text": "KE = 9 J"
+    },
+    "injected_errors": [
+      {
+        "wrong_text": "KE = 18 J",
+        "cause": "forgot the 1/2 in KE = (1/2) m v**2"
+      },
+      {
+        "wrong_text": "KE = 6 J",
+        "cause": "used m*v (momentum) instead of (1/2) m v**2"
+      }
+    ]
+  },
+  {
+    "id": "math_quadratic_roots",
+    "domain": "math",
+    "statement": "Solve x**2 + x - 6 = 0.",
+    "correct_answer": {
+      "text": "x = 2 and x = -3"
+    },
+    "injected_errors": [
+      {
+        "wrong_text": "x = -2 and x = 3",
+        "cause": "sign error while factoring: wrote (x - 3)(x + 2)"
+      },
+      {
+        "wrong_text": "x = 2",
+        "cause": "found only one root and stopped"
+      }
+    ]
+  },
+  {
+    "id": "math_chain_rule",
+    "domain": "math",
+    "statement": "Differentiate sin(x**2) with respect to x.",
+    "correct_answer": {
+      "text": "2*x*cos(x**2)"
+    },
+    "injected_errors": [
+      {
+        "wrong_text": "cos(x**2)",
+        "cause": "forgot the chain rule: missing the inner derivative 2x"
+      },
+      {
+        "wrong_text": "2*x*sin(x**2)",
+        "cause": "differentiated the inner function but not the outer sin"
+      }
+    ]
+  },
+  {
+    "id": "math_first_order_ode",
+    "domain": "math",
+    "statement": "Solve the initial value problem dy/dx = 3*y with y(0) = 2.",
+    "correct_answer": {
+      "text": "y = 2*exp(3*x)"
+    },
+    "injected_errors": [
+      {
+        "wrong_text": "y = 2*exp(x)",
+        "cause": "dropped the rate constant 3 from the exponent"
+      },
+      {
+        "wrong_text": "y = 3*exp(2*x)",
+        "cause": "swapped the initial condition and the rate constant"
+      }
+    ]
+  }
+    
+    
+]
