@@ -6,3 +6,4 @@ runs/
 *.pyc
 Test/Test.py
 Test/Testapi.py
+DEVLOG.md
