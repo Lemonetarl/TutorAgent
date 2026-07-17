@@ -1,21 +1,4 @@
-"""
-validators.py -- Stage 1, Layer 3.
 
-Pure-Python checks on the PARSE RESULT for exactly the things the extraction
-model cannot be trusted to self-report. Every validator has the same shape:
-
-    validator(raw_text, parsed) -> list[Finding]
-
-and NO validator raises on bad content -- bad content becomes flags, notes,
-and confidence downgrades, so routing (ready_for_pipeline) stays the single
-decision point. The one exception to "never raise" is programmer error, which
-should always be loud.
-
-NOTE: the leakage check lives HERE now, permanently -- not in
-models._enforce_invariants. It is text forensics, which is this file's job,
-and keeping it here ends the recurring loss of that block during merges.
-The hard runtime guarantee remains enforce_isolation() in solver_pipeline.
-"""
 from __future__ import annotations
 
 import re

@@ -1,36 +1,4 @@
-"""
-eval_harness.py -- the runner. Loops problems x (correct answer, each
-injected-wrong answer) through the FULL pipeline (parse -> solve -> verify ->
-gate -> grade) and flattens every run into a TrialRecord.
 
-    python -m scripts.eval_harness eval_bank.json
-    python -m scripts.eval_harness eval_bank.json --limit 1      # cheap smoke run
-    python -m scripts.eval_harness Math.json Physics.json --concurrency 3
-
-DESIGN RULES:
-  - The harness OBSERVES the pipeline; it never changes how grading works.
-  - One crashed trial must not kill the run: every trial is exception-isolated
-    and a crash becomes an outcome="error" record, counted in the report.
-  - Bounded concurrency (Semaphore): full-fan-out gather WILL hit 429s on a
-    real key; 3 in flight is the sane default and _with_backoff handles the rest.
-  - Records are also written as JSONL so the report can be regenerated (or the
-    metrics re-scored) later without re-spending a single token.
-
-BANK SCHEMA (list of objects):
-  {
-    "id": "kin_free_fall_01",
-    "domain": "physics" | "math",
-    "statement": "...",
-    "correct_answer": {"text": "3.03 s"},
-    "injected_errors": [
-      {"wrong_text": "2.14 s", "cause": "forgot the factor of 2: used sqrt(h/g)"},
-      ...
-    ]
-  }
-Answers are TEXT only, deliberately: the harness feeds raw submissions through
-the real parser, so the eval exercises the WHOLE system end to end -- not a
-version of it with extraction conveniently skipped.
-"""
 from __future__ import annotations
 
 import argparse
@@ -41,6 +9,8 @@ from pathlib import Path
 from typing import Optional
 
 from scripts.adapter import grade
+from scripts.diagnose import diagnose
+from scripts.diagnosis_judge import judge_match
 from scripts.metrics import TrialRecord, compute_metrics
 from scripts.parser import ParserError, parse
 from scripts.report import write_report
@@ -67,10 +37,33 @@ def _pipeline_trace_totals(trace_path: str) -> tuple[int, int]:
         return 0, 0
 
 
+async def _attach_diagnosis(client, rec: TrialRecord, *, parsed, reference,
+                            comparison, injected_cause: str) -> None:
+    """S5 + judge. A diagnosis failure must never kill the trial's verdict:
+    it becomes diagnosis_error and the grade survives."""
+    rec.diagnosis_attempted = True
+    try:
+        diag, tin, tout = await diagnose(client, parsed=parsed,
+                                         reference=reference,
+                                         comparison=comparison)
+        rec.input_tokens += tin
+        rec.output_tokens += tout
+        rec.diagnosis_hypotheses = [h.misconception for h in diag.hypotheses]
+        rec.diagnosis_top = rec.diagnosis_hypotheses[0]
+        verdict, tin2, tout2 = await judge_match(
+            client, injected_cause=injected_cause, hypotheses=diag.hypotheses)
+        rec.input_tokens += tin2
+        rec.output_tokens += tout2
+        rec.diagnosis_matched_rank = verdict.matched_rank
+    except Exception as e:  # noqa: BLE001 -- isolate: verdict already earned
+        rec.diagnosis_error = f"{type(e).__name__}: {e}"
+
+
 async def run_one_trial(client, sem: asyncio.Semaphore, *, problem: dict,
                         answer_text: str, trial_kind: str,
                         expected_match: bool,
-                        injected_cause: Optional[str]) -> TrialRecord:
+                        injected_cause: Optional[str],
+                        with_diagnosis: bool = False) -> TrialRecord:
     rec = TrialRecord(problem_id=problem["id"], domain=problem["domain"],
                       trial_kind=trial_kind, expected_match=expected_match,  # type: ignore[arg-type]
                       outcome="error", injected_cause=injected_cause)
@@ -109,6 +102,16 @@ async def run_one_trial(client, sem: asyncio.Semaphore, *, problem: dict,
             rec.is_match = comparison.is_match
             rec.method = comparison.method
             rec.detail = comparison.detail
+
+            # S5: diagnose only CAUGHT wrong answers. Never CORRECT (nothing
+            # to diagnose), never UNSUPPORTED (diagnosing the ungradeable is
+            # guessing), never correct-answer trials (no ground truth).
+            if (with_diagnosis and trial_kind == "wrong"
+                    and comparison.verdict == "INCORRECT" and injected_cause):
+                await _attach_diagnosis(client, rec, parsed=parsed,
+                                        reference=result.reference,
+                                        comparison=comparison,
+                                        injected_cause=injected_cause)
             return rec
 
         except (ParserError, Exception) as e:  # noqa: BLE001 -- isolate the trial
@@ -120,20 +123,22 @@ async def run_one_trial(client, sem: asyncio.Semaphore, *, problem: dict,
 
 
 async def run_eval(client, bank: list[dict], *,
-                   concurrency: int = DEFAULT_CONCURRENCY) -> list[TrialRecord]:
+                   concurrency: int = DEFAULT_CONCURRENCY,
+                   with_diagnosis: bool = False) -> list[TrialRecord]:
     sem = asyncio.Semaphore(concurrency)
     tasks = []
     for prob in bank:
         tasks.append(run_one_trial(
             client, sem, problem=prob,
             answer_text=prob["correct_answer"]["text"],
-            trial_kind="correct", expected_match=True, injected_cause=None))
+            trial_kind="correct", expected_match=True, injected_cause=None,
+            with_diagnosis=with_diagnosis))
         for err in prob.get("injected_errors", []):
             tasks.append(run_one_trial(
                 client, sem, problem=prob,
                 answer_text=err["wrong_text"],
                 trial_kind="wrong", expected_match=False,
-                injected_cause=err["cause"]))
+                injected_cause=err["cause"], with_diagnosis=with_diagnosis))
     return list(await asyncio.gather(*tasks))
 
 

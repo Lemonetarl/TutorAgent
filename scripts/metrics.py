@@ -1,27 +1,4 @@
-"""
-metrics.py -- eval scoring. PURE: records in, numbers out. No API calls, no
-file I/O, no imports from the pipeline. That purity is the point: a bug in
-the scorer silently corrupts every number in the report, so the scorer must
-be testable on synthetic records without spending a token.
 
-METRIC DEFINITIONS (get these pedantically right):
-  catch rate           of WRONG-answer trials that produced a verdict, the
-                       fraction judged not-a-match. "When the student was
-                       wrong, how often did we say so?"
-  false-positive rate  of CORRECT-answer trials that produced a verdict, the
-                       fraction judged not-a-match. "When the student was
-                       right, how often did we wrongly flag them?" The number
-                       that separates a real grader from a toy.
-  uncertain rate       of trials that entered the pipeline, the fraction that
-                       BLOCKED (returned UNCERTAIN). Reported separately per
-                       trial kind, because uncertainty on correct answers
-                       means something different than on wrong ones.
-
-THE SUBTLETY: blocked trials are EXCLUDED from the catch/FP denominators.
-A trial that returned UNCERTAIN did not get the verdict wrong -- it declined
-to answer. Folding blocks into "misses" would punish the system for its own
-honesty invariant. The uncertain rate reports the size of what was excluded.
-"""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
@@ -47,6 +24,12 @@ class TrialRecord:
     detail: str = ""
     # populated on wrong trials:
     injected_cause: Optional[str] = None
+    # S5 diagnosis (caught wrong trials, when enabled):
+    diagnosis_attempted: bool = False
+    diagnosis_top: str = ""                       # top-ranked misconception
+    diagnosis_hypotheses: list[str] = field(default_factory=list)
+    diagnosis_matched_rank: Optional[int] = None  # judge: 1-based; None = no match
+    diagnosis_error: str = ""
     # pipeline context:
     pipeline_status: Optional[str] = None    # HIGH/MEDIUM/UNCERTAIN
     rounds_used: Optional[int] = None
@@ -76,6 +59,9 @@ class EvalMetrics:
     uncertain_rate: Optional[float]
     uncertain_rate_correct: Optional[float]
     uncertain_rate_wrong: Optional[float]
+    n_diagnosed: int
+    diagnosis_top1_accuracy: Optional[float]     # top hypothesis matched cause
+    diagnosis_any_accuracy: Optional[float]      # any of the <=3 matched
     total_input_tokens: int
     total_output_tokens: int
     total_seconds: float
@@ -109,6 +95,12 @@ def compute_metrics(records: list[TrialRecord]) -> EvalMetrics:
         return _safe_div(sum(1 for r in entered if r.outcome == "uncertain"),
                          len(entered))
 
+    # diagnosis accuracy: caught wrong trials where S5 ran and did not error.
+    # The judge returning None (no hypothesis matched) is a JUDGED MISS and
+    # stays in the denominator; a crashed diagnosis does not.
+    diagnosed = [r for r in wrong
+                 if r.diagnosis_attempted and not r.diagnosis_error]
+
     total_seconds = sum(r.seconds for r in records)
     return EvalMetrics(
         n_trials=len(records),
@@ -123,6 +115,13 @@ def compute_metrics(records: list[TrialRecord]) -> EvalMetrics:
         uncertain_rate=_unc_rate(records),
         uncertain_rate_correct=_unc_rate(correct),
         uncertain_rate_wrong=_unc_rate(wrong),
+        n_diagnosed=len(diagnosed),
+        diagnosis_top1_accuracy=_safe_div(
+            sum(1 for r in diagnosed if r.diagnosis_matched_rank == 1),
+            len(diagnosed)),
+        diagnosis_any_accuracy=_safe_div(
+            sum(1 for r in diagnosed if r.diagnosis_matched_rank is not None),
+            len(diagnosed)),
         total_input_tokens=sum(r.input_tokens for r in records),
         total_output_tokens=sum(r.output_tokens for r in records),
         total_seconds=total_seconds,

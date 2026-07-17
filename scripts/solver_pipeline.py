@@ -1,40 +1,4 @@
-"""
-solver_pipeline.py -- Stages 2 (Independent Solver), 3 (Blind Verifier),
-and 3b (Adjudicator + Gate) of the answer-checking pipeline.
 
-REAL DEPENDENCIES (already built and tested):
-    models.py      -- ProblemOnly, StudentAnswer, ReferenceAnswer, AnswerValue
-    comparator.py  -- compare(), expressions_equivalent(); whitelisted sympify
-
-THE ONLY MOCKED DEPENDENCY is the LLM itself: `MockClient` replays scripted
-responses through the *same* orchestration code paths that `AnthropicClient`
-uses, so concurrency, voting, the tool loop, adjudication retries, and the
-review queue are all genuinely exercised offline.
-
-===========================  SYSTEM INVARIANTS  ===========================
-I1. The solver NEVER sees the student's answer.
-      -> enforce_isolation() raises ValueError before any solver/verifier
-         API call. (Explicit raise, not `assert`: `python -O` strips asserts,
-         and an invariant that vanishes under an interpreter flag isn't one.)
-I2. The verifier NEVER sees the solver's reasoning.
-      -> the verifier prompt is built from the problem statement alone, and
-         enforce_verifier_blindness() trips if any solver step equation leaks
-         into it. On retry rounds, ONLY the adjudicator's contradiction
-         sentence crosses over -- evidence, not reasoning chains. (The
-         adjudicator is the single component permitted to see both sides.)
-I3. UNCERTAIN is a first-class output.
-      -> if solver and verifier haven't converged within MAX_ROUNDS, the
-         result is status=UNCERTAIN, blocked=True, reference=None, and the
-         full trace is appended to the human review queue. Nothing downstream
-         may issue a verdict from a blocked result.
-
-CONVERGENCE STATUS SEMANTICS (at the default k=1; see K_SAMPLES note)
-    HIGH      independent verifier agreement on the first round
-    MEDIUM    agreement reached only after an evidence retry (round >= 2)
-    UNCERTAIN no solver<->verifier agreement within MAX_ROUNDS
-    (At k>1 the original semantics apply: HIGH additionally requires a
-    unanimous solver vote; MEDIUM covers split-vote agreement.)
-"""
 from __future__ import annotations
 
 import asyncio

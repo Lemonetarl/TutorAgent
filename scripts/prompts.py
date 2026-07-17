@@ -1,10 +1,3 @@
-"""
-prompts.py -- Stage 1 (parser) prompt registry.
-
-ALL text sent to the extraction model lives here and nowhere else. When
-extraction quality is bad, this is the file you edit; bump PARSER_PROMPT_VERSION
-so eval numbers stay attributable to a prompt version. No logic in this file.
-"""
 
 PARSER_PROMPT_VERSION = "v1"
 

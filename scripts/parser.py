@@ -1,30 +1,4 @@
-"""
-parser.py -- Stage 1 orchestration. The single entry point is parse():
 
-    outcome = await parse(client, raw_text)      # or parse_sync(...)
-    outcome.parsed            -> ParsedInput (validated, flagged, downgraded)
-    outcome.parsed.ready_for_pipeline()  -> the routing decision
-
-THE THREE LAYERS
-  1. split_fast_path()  -- deterministic marker detection ("Problem:"/"Answer:",
-                           "Q:"/"A:"). Zero cost, cannot hallucinate. Its result
-                           is passed to the model as a HINT, pinning the
-                           boundary so the model only extracts fields.
-  2. one Haiku call     -- temperature 0, forced-tool structured output whose
-                           schema IS models.ParsedInput. A pydantic
-                           ValidationError triggers ONE retry with the exact
-                           error text appended (the error-feedback loop).
-  3. validators.py      -- pure-Python forensics on the result: leakage,
-                           verbatim answer_text, token coverage, completeness,
-                           sympy-parseability. Findings become flags + notes +
-                           confidence downgrades, never exceptions.
-
-MODEL ROUTING: extraction is Haiku's job (cheap, fast, temp 0); solving is
-Sonnet's (solver_pipeline). That is why this file has its own structured-call
-helper instead of importing solver_pipeline.call_structured, which is
-hardwired to the Sonnet MODEL constant -- and why S1 never imports from
-S2/S3: dependencies point downstream only.
-"""
 from __future__ import annotations
 
 import asyncio

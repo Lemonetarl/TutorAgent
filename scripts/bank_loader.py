@@ -1,20 +1,4 @@
-"""
-bank_loader.py -- adapt the real ProblemBank.json schema to the eval harness's
-expected shape, repairing what's safely repairable and SKIPPING (loudly) what
-is genuinely out of scope. Keeping this translation in one place means the
-harness stays schema-agnostic and the raw bank stays untouched.
 
-SCHEMA DELTAS handled:
-  problem_statement            -> statement
-  correct_answer.value         -> correct_answer.text
-  domain "mathe" (typo)        -> "math"
-  trailing '.' / ',' on answers-> stripped (won't sympify otherwise)
-
-SKIPPED (reported, not crashed):
-  - problems whose correct answer isn't a single parseable scalar/expression
-    (e.g. list/vector answers the comparator declares out of scope by design)
-  - problems with zero injected_errors contribute a correct-trial only
-"""
 from __future__ import annotations
 
 import json

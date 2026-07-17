@@ -9,4 +9,6 @@ Test/Testapi.py
 DEVLOG.md
 Test/Todo.txt
 human_review_queue.jsonl
+*.jsonl
+
 

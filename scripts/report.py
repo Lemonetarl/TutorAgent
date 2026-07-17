@@ -43,8 +43,11 @@ def render_report(records: list[TrialRecord], metrics: EvalMetrics,
         f"fraction that BLOCKED (honest refusal, excluded from the rates above) |")
     add(f"| uncertain (correct / wrong) | {_pct(metrics.uncertain_rate_correct)} / "
         f"{_pct(metrics.uncertain_rate_wrong)} | uncertainty split by trial kind |")
-    add(f"| diagnosis accuracy | n/a | S5 not yet built; injected_cause labels are "
-        f"recorded per trial, ready to score against |")
+    add(f"| **diagnosis top-1 accuracy** | **{_pct(metrics.diagnosis_top1_accuracy)}** | "
+        f"of caught wrong answers diagnosed (n={metrics.n_diagnosed}), the TOP "
+        f"hypothesis matched the injected cause (semantic judge) |")
+    add(f"| diagnosis any-hypothesis accuracy | {_pct(metrics.diagnosis_any_accuracy)} | "
+        f"any of the <=3 ranked hypotheses matched the injected cause |")
     add("")
 
     add("## Outcome breakdown")
@@ -81,11 +84,19 @@ def render_report(records: list[TrialRecord], metrics: EvalMetrics,
 
     add("## Per-trial results")
     add("")
-    add("| problem | kind | outcome | verdict | method | injected cause | tok in/out | s |")
+    add("| problem | kind | outcome | verdict | injected cause | top diagnosis | tok in/out | s |")
     add("|---|---|---|---|---|---|---|---|")
     for r in records:
+        if r.diagnosis_error:
+            diag = "(diagnosis errored)"
+        elif r.diagnosis_attempted:
+            hit = (f" (hit@{r.diagnosis_matched_rank})"
+                   if r.diagnosis_matched_rank is not None else " (miss)")
+            diag = f"{r.diagnosis_top[:60]}{hit}"
+        else:
+            diag = ""
         add(f"| {r.problem_id} | {r.trial_kind} | {r.outcome} | {r.verdict or ''} "
-            f"| {r.method} | {r.injected_cause or ''} "
+            f"| {r.injected_cause or ''} | {diag} "
             f"| {r.input_tokens}/{r.output_tokens} | {r.seconds:.1f} |")
     add("")
 
@@ -104,6 +115,10 @@ def render_report(records: list[TrialRecord], metrics: EvalMetrics,
     add("- Token counts run ~30% above pre-migration estimates (new tokenizer).")
     add("- Adaptive thinking tokens count against max_tokens and vary per problem, "
         "so per-trial cost is not uniform.")
+    add("- Diagnosis matching is judged SEMANTICALLY by a small model (a model "
+        "grading a model); hypotheses and causes are in the records JSONL -- "
+        "spot-check them. Replay verification (mechanically reproducing the "
+        "student's value from the hypothesized error) is the planned v2 upgrade.")
     return "\n".join(lines)
 
 

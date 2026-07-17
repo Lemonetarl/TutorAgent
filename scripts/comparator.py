@@ -1,31 +1,4 @@
-"""
-comparator.py -- Stage 4 of the answer-checking pipeline.
 
-THE CONTRACT
-    compare(student_values, student_units, ref_values, ref_units,
-            answer_type, domain) -> ComparisonResult
-
-    verdict is one of:
-        CORRECT      -- same answer, same form (string-identical after normalization)
-        EQUIVALENT   -- same answer, different form (0.5 vs 1/2, km/h vs m/s,
-                        sin(2x) vs 2sin(x)cos(x))
-        INCORRECT    -- provably a different answer
-        UNSUPPORTED  -- this comparator cannot judge it (unknown type, unparseable
-                        input, undetermined equivalence). Routes to UNCERTAIN
-                        upstream. NEVER guess.
-
-DESIGN RULES (the interview answers live here):
-  1. Pure Python. No API calls. A verdict must be deterministic and replayable.
-  2. UNSUPPORTED is a verdict, not an exception. Honesty > coverage.
-  3. Symbolic equivalence uses a ladder:
-       structural -> numeric sampling -> simplify (in a killable subprocess).
-     Sampling can PROVE inequality (one differing point suffices).
-     simplify can PROVE equality (reduction to zero suffices).
-     Neither can do the other's job reliably; use each for its strength.
-  4. simplify() is not guaranteed to terminate fast, so it runs in a separate
-     process with a hard timeout. signal.alarm is Unix-only; a subprocess
-     works on Windows too.
-"""
 from __future__ import annotations
 
 import multiprocessing as mp
