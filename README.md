@@ -138,7 +138,7 @@ Measured across the 21-problem bank (24 trials: 8 correct answers,
 | Diagnosis any | 81% (n=16) | of all three diagnosis the percentage of correct diagnosis obtained |
 
 Reports are generated automatically into `runs/`; see
-[`runs/eval_report_example.md`](runs/eval_report_example.md) for a full run.
+[`docs/eval_report_example.md`](docs/eval_report_example.md) for a full run.
 
 ## Scope & Limitations
 
