@@ -134,6 +134,8 @@ Measured across the 21-problem bank (24 trials: 8 correct answers,
 | Catch rate | 100% (n=63) | of wrong answers that got a verdict, fraction flagged INCORRECT |
 | False-positive rate | 11% (n=63) | of correct answers, fraction wrongly flagged |
 | Uncertain rate | 2% | fraction where the system declined to issue a verdict rather than guess |
+| Diagnosis top-1 | 50% (n=16) | of the three diagnosis the first diagnosis of error being correct |
+| Diagnosis any | 81% (n=16) | of all three diagnosis the percentage of correct diagnosis obtained |
 
 Reports are generated automatically into `runs/`; see
 [`runs/eval_report_example.md`](runs/eval_report_example.md) for a full run.
@@ -188,7 +190,7 @@ Test/
 ├── test_solver_pipeline.py
 ├── test_eval_harness.py
 ├── test_diagnosis.py
-├── test_check_answer.py
+├── test_check_answer.py 
 └── ...
 
 ProblemBank.json
