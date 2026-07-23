@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
@@ -28,7 +27,11 @@ class TrialRecord:
     diagnosis_attempted: bool = False
     diagnosis_top: str = ""                       # top-ranked misconception
     diagnosis_hypotheses: list[str] = field(default_factory=list)
+    # The model already GENERATES these -- keeping them costs no extra tokens
+    # and is the difference between comparing labels and comparing reasoning.
+    diagnosis_explanations: list[str] = field(default_factory=list)
     diagnosis_matched_rank: Optional[int] = None  # judge: 1-based; None = no match
+    diagnosis_judge_reasoning: str = ""           # why the judge matched / didn't
     diagnosis_error: str = ""
     # pipeline context:
     pipeline_status: Optional[str] = None    # HIGH/MEDIUM/UNCERTAIN
@@ -62,6 +65,7 @@ class EvalMetrics:
     n_diagnosed: int
     diagnosis_top1_accuracy: Optional[float]     # top hypothesis matched cause
     diagnosis_any_accuracy: Optional[float]      # any of the <=3 matched
+    diagnosis_rank_counts: dict                  # {1: n, 2: n, 3: n, "miss": n}
     total_input_tokens: int
     total_output_tokens: int
     total_seconds: float
@@ -101,6 +105,14 @@ def compute_metrics(records: list[TrialRecord]) -> EvalMetrics:
     diagnosed = [r for r in wrong
                  if r.diagnosis_attempted and not r.diagnosis_error]
 
+    # Where in the ranking the truth landed. A large hit@2/hit@3 bucket next
+    # to a small hit@1 means GENERATION is working and RANKING is the weak
+    # link -- a different problem than "the model has no idea".
+    rank_counts: dict = {"miss": 0}
+    for r in diagnosed:
+        key = r.diagnosis_matched_rank if r.diagnosis_matched_rank else "miss"
+        rank_counts[key] = rank_counts.get(key, 0) + 1
+
     total_seconds = sum(r.seconds for r in records)
     return EvalMetrics(
         n_trials=len(records),
@@ -122,6 +134,7 @@ def compute_metrics(records: list[TrialRecord]) -> EvalMetrics:
         diagnosis_any_accuracy=_safe_div(
             sum(1 for r in diagnosed if r.diagnosis_matched_rank is not None),
             len(diagnosed)),
+        diagnosis_rank_counts=rank_counts,
         total_input_tokens=sum(r.input_tokens for r in records),
         total_output_tokens=sum(r.output_tokens for r in records),
         total_seconds=total_seconds,

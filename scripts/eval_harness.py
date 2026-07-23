@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import argparse
@@ -49,12 +48,14 @@ async def _attach_diagnosis(client, rec: TrialRecord, *, parsed, reference,
         rec.input_tokens += tin
         rec.output_tokens += tout
         rec.diagnosis_hypotheses = [h.misconception for h in diag.hypotheses]
+        rec.diagnosis_explanations = [h.explanation for h in diag.hypotheses]
         rec.diagnosis_top = rec.diagnosis_hypotheses[0]
         verdict, tin2, tout2 = await judge_match(
             client, injected_cause=injected_cause, hypotheses=diag.hypotheses)
         rec.input_tokens += tin2
         rec.output_tokens += tout2
         rec.diagnosis_matched_rank = verdict.matched_rank
+        rec.diagnosis_judge_reasoning = verdict.reasoning
     except Exception as e:  # noqa: BLE001 -- isolate: verdict already earned
         rec.diagnosis_error = f"{type(e).__name__}: {e}"
 
